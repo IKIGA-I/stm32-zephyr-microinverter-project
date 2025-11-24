@@ -1,0 +1,62 @@
+cmake:
+  application:
+    configuration-dir: 'D:/Projects/Gemini01/stm32_microinverter'
+    source-dir: 'D:/Projects/Gemini01/stm32_microinverter'
+  board:
+    name: 'stm32_min_dev'
+    path:
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/boards/others/stm32_min_dev'
+    qualifiers: 'stm32f103xb'
+    revision: 'blue'
+  devicetree:
+    bindings-dirs:
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/bindings'
+    files:
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/boards/others/stm32_min_dev/stm32_min_dev.dts'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/boards/others/stm32_min_dev/stm32_min_dev_stm32f103xb_blue.overlay'
+     - 'D:/Projects/Gemini01/stm32_microinverter/app.overlay'
+    include-dirs:
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/ambiq/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/atmel/include'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/bouffalolab/include'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/bouffalolab/include/zephyr'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/gigadevice/include'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/microchip/include'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/microchip/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/nuvoton/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/nxp/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/stm32/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/modules/hal/ti/dts'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/include'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/include/zephyr'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/common'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/vendor'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/rx'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/x86'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/xtensa'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/sparc'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/riscv'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/posix'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/arm64'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/arm'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts/arc'
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/dts'
+    user-files:
+     - 'D:/Projects/Gemini01/stm32_microinverter/app.overlay'
+  kconfig:
+    files:
+     - 'D:/Projects/Gemini01/zephyrproject/zephyr/boards/others/stm32_min_dev/stm32_min_dev_defconfig'
+     - 'D:/Projects/Gemini01/stm32_microinverter/prj.conf'
+    user-files:
+     - 'D:/Projects/Gemini01/stm32_microinverter/prj.conf'
+  toolchain:
+    name: 'zephyr'
+    path: 'D:/Projects/Gemini01/zephyr-sdk-0.16.8_windows-x86_64/zephyr-sdk-0.16.8'
+  zephyr:
+    version: '4.3.99'
+    zephyr-base: 'D:/Projects/Gemini01/zephyrproject/zephyr'
+version: '0.1.0'
+west:
+  command: 'C:\Users\USER\AppData\Roaming\Python\Python313\Scripts\west build -p auto -b stm32_min_dev'
+  topdir: 'D:\Projects\Gemini01\zephyrproject'
+  version: '1.5.0'

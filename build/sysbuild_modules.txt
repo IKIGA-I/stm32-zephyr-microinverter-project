@@ -1,0 +1,1 @@
+"mcuboot":"D:/Projects/Gemini01/zephyrproject/bootloader/mcuboot":"D:/Projects/Gemini01/zephyrproject/bootloader/mcuboot/boot/zephyr/sysbuild"

@@ -1,0 +1,30 @@
+/* Clone-Safe Configuration for STM32F103 Blue Pill */
+/* Forces usage of Internal 8MHz Oscillator (HSI) instead of External Crystal */
+
+/* 1. Enable Internal 8MHz Oscillator */
+&clk_hsi {
+    status = "okay";
+};
+
+/* 2. Disable External Oscillator (The most common failure point on clones) */
+&clk_hse {
+    status = "disabled";
+};
+
+/* 3. Configure PLL (Phase Locked Loop) */
+/* HSI (8MHz) is internally divided by 2 -> 4MHz entering PLL */
+/* We multiply by 12 to get 48MHz System Clock (Safe & Fast) */
+&pll {
+    mul = <12>;
+    clocks = <&clk_hsi>;
+    status = "okay";
+};
+
+/* 4. Set the System Clock to use the PLL */
+&rcc {
+    clocks = <&pll>;
+    clock-frequency = <DT_FREQ_M(48)>;
+    ahb-prescaler = <1>;
+    apb1-prescaler = <2>;
+    apb2-prescaler = <1>;
+};
