@@ -2,106 +2,117 @@
 
 **A multi-threaded firmware simulation of a solar microinverter control system, built on Zephyr RTOS.**
 
-![Status](https://img.shields.io/badge/Status-Active-success)
-![Platform](https://img.shields.io/badge/Platform-STM32-blue)
-![RTOS](https://img.shields.io/badge/RTOS-Zephyr-purple)
+[Status: Active]
+[Platform: STM32F103 (Blue Pill)]
+[RTOS: Zephyr]
 
 ## 🚀 Overview
 This project implements the control logic for a solar microinverter using **Zephyr RTOS** on an STM32F103 (Blue Pill). Instead of relying on external hardware, it utilizes a **Hardware-in-the-Loop (HIL) Mocking** strategy to simulate solar panel physics and grid conditions entirely in software.
 
-This architecture demonstrates how firmware logic can be developed and tested in parallel with hardware design—a critical workflow in professional embedded engineering.
-
-### Key Features
-* **Multi-Threaded Architecture:** Separates "Physics Simulation" (generating mock sensor data) from "Control Logic" (reacting to data).
-* **Clone-Safe Configuration:** Uses a custom Device Tree Overlay (`app.overlay`) to force the Internal High-Speed Oscillator (HSI), bypassing common crystal failures on STM32 clones.
-* **Test Automation Interface:** Includes a UART Shell (CLI) to manually inject voltage faults and override the physics engine for unit testing.
-* **Safety Logic:** Implements Over-Voltage (OV) and Under-Voltage (UV) protection states using LED indicators.
+It features a custom **UART Shell** that allows engineers to inject faults (Over-Voltage/Under-Voltage) manually via a serial terminal to verify safety logic.
 
 ## 🏗️ System Architecture
 
 The application runs two primary threads managed by the Zephyr Kernel:
 
-| Thread | Priority | Frequency | Responsibility |
-| :--- | :--- | :--- | :--- |
-| **SolarPhysics** | High (7) | 10 Hz | Simulates voltage ramp (Day/Night cycle) 0V ↔ 50V. |
-| **Controller** | Normal (5) | 5 Hz | Reads voltage, determines state (Generating/Fault), controls LED. |
-| **Shell/Log** | Low | Event | Handles user input and system logging via UART. |
-
-
+| Thread         | Priority | Frequency | Responsibility                                                      |
+| :------------- | :------- | :-------- | :------------------------------------------------------------------ |
+| **SolarPhysics** | High (7) | 10 Hz     | Simulates voltage ramp (Day/Night cycle) 0V ↔ 50V.                  |
+| **Controller** | Normal (5)| 5 Hz      | Reads voltage, determines state (Generating/Fault), controls LED.   |
+| **Shell/Log** | Low      | Event     | Handles user input and system logging via UART.                     |
 
 ## 🛠️ Hardware & Config
 * **Target:** STM32F103C8T6 "Blue Pill" (Clone/Genuine)
-* **Clock Source:** Internal 8MHz HSI (PLL -> 48MHz System Clock)
-* **Indicators:**
-    * **Solid ON:** Normal Operation (20V - 45V)
-    * **Blinking:** Fault Condition (<20V or >45V)
+* **Clock Source:** Internal 8MHz HSI (PLL -> 48MHz System Clock) to bypass faulty external crystals on clone boards.
+* **Communication:** UART Console (9600 Baud) via Arduino Bridge.
 
-## 💻 Code Structure
+## 💻 Technical Implementation
 
-### 1. Hardware Mocking (`src/main.c`)
-Instead of blocking on ADC reads, the system uses a shared variable `simulated_voltage`.
-```c
-/* Physics Thread */
-void solar_simulation_thread(void) {
-    // Ramps voltage up and down to mimic sunlight intensity
-    if (rising) simulated_voltage += 0.5f;
-}
+### 1. The Clone Fix (`app.overlay`)
+To ensure reliability on non-genuine ST chips, the external crystal (HSE) is disabled via Device Tree, and the system is forced to run on the internal oscillator.
 
-```
-### 2. The Clone Fix (`app.overlay`)
-To ensure reliability on non-genuine ST chips, the external crystal (HSE) is disabled via Device Tree.
-```dts
-/* Force Internal High-Speed Oscillator */
-&clk_hse { status = "disabled"; };
-&clk_hsi { status = "okay"; };
-&pll {
-    clocks = <&clk_hsi>;
-    mul = <12>; /* 4MHz * 12 = 48MHz */
-};
-```
+    /* Force Internal High-Speed Oscillator */
+    &clk_hse { status = "disabled"; };
+    &clk_hsi { status = "okay"; };
 
-### 2. OS Configuration Section (`prj.conf`)
+    /* Configure PLL to boost 4MHz (HSI/2) to 48MHz */
+    &pll {
+        clocks = <&clk_hsi>;
+        mul = <12>; 
+        status = "okay";
+    };
 
-```markdown
-### 3. OS Configuration (`prj.conf`)
-Enables the Shell and floating-point support while optimizing stack sizes for the STM32F1's limited RAM.
-```properties
-CONFIG_SHELL=y
-CONFIG_CBPRINTF_FP_SUPPORT=y
-CONFIG_MAIN_STACK_SIZE=4096  # Increased for stability
-```
+    /* Slow down UART for SoftwareSerial Bridge compatibility */
+    &usart1 {
+        current-speed = <9600>;
+        status = "okay";
+    };
 
-### 3. Build Instructions Section
+### 2. OS Configuration (`prj.conf`)
+Optimized for constrained RAM and clean serial output.
 
-```markdown
-## ⚙️ Build Instructions
+    CONFIG_SHELL=y
+    CONFIG_CBPRINTF_FP_SUPPORT=y
+    CONFIG_MAIN_STACK_SIZE=4096
 
-### Prerequisites
-* Zephyr SDK 0.16+
-* West Build Tool
-* OpenOCD
+    # Disable ANSI colors to prevent garbage text in non-VT100 terminals (Arduino Serial Monitor)
+    CONFIG_SHELL_VT100_COLORS=n
+    CONFIG_LOG_BACKEND_SHOW_COLOR=n
+
+## 🔌 Setup without USB-TTL Adapter (Arduino Uno Bridge)
+Since a dedicated USB-to-UART adapter was unavailable, an Arduino Uno is programmed to act as a 9600 Baud SoftwareSerial bridge.
+
+### Wiring
+| STM32 Pin      | Arduino Pin | Function                      |
+| :------------- | :---------- | :---------------------------- |
+| **PA9 (TX)** | **D10** | Signal travels STM32 -> PC    |
+| **PA10 (RX)** | **D11** | Signal travels PC -> STM32    |
+| **GND** | **GND** | Common Ground                 |
+
+### Arduino Bridge Firmware
+Upload this sketch to the Arduino to enable passthrough mode:
+
+    #include <SoftwareSerial.h>
+    SoftwareSerial stmSerial(10, 11); // RX, TX
+
+    void setup() {
+      Serial.begin(9600);     // PC Connection
+      stmSerial.begin(9600);  // STM32 Connection
+    }
+
+    void loop() {
+      // Pass data bi-directionally
+      if (stmSerial.available()) Serial.write(stmSerial.read());
+      if (Serial.available()) stmSerial.write(Serial.read());
+    }
+
+## ⚙️ Build & Run
 
 ### 1. Build
-```bash
-west build -p auto -b stm32_min_dev
+    west build -p auto -b stm32_min_dev
 
-```
 ### 2. Flash
-```bash
-west flash --runner openocd
-```
+    west flash --runner openocd
+    
+*Tip: If flashing fails on clone chips, hold the physical RESET button on the Blue Pill while running the command, then release it once OpenOCD starts.*
+
 ### 3. Manual Testing (Shell)
+Open a Serial Monitor (9600 Baud, CRLF Line Endings).
 
-```bash
-uart:~$ sensor set 48
-Manual Override: 48 V
-# LED should start blinking (Over Voltage Fault)
-```
+**Test Case 1: Normal Operation**
+    uart:~$ sensor set 35
+    Manual Override: 35 V
+    # Result: LED Solid ON
 
-## 🐛 Troubleshooting "Clones"
-If flashing fails with `AP write error` or reset issues:
-1.  **Hold RESET:** Press and hold the physical RESET button on the board.
-2.  **Run Flash:** Execute the `west flash` command.
-3.  **Release:** Release the button once OpenOCD detects the ST-Link.
+**Test Case 2: Fault Injection**
+    uart:~$ sensor set 55
+    Manual Override: 55 V
+    # Result: LED Blinking Fast (Over-Voltage)
+
+**Test Case 3: Return to Simulation**
+    uart:~$ sensor auto
+    Auto Simulation Enabled
+    # Result: LED animates through day/night cycle
 
 ---
+*Author: Golam Rahman | Master of Engineering Studies, University of Auckland*
