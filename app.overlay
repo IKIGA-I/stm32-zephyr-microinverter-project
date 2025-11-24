@@ -28,3 +28,11 @@
     apb1-prescaler = <2>;
     apb2-prescaler = <1>;
 };
+
+/* ... (Keep your existing clock config above this) ... */
+
+/* Change UART speed to 9600 for Arduino SoftwareSerial compatibility */
+&usart1 {
+    current-speed = <9600>;
+    status = "okay";
+};
