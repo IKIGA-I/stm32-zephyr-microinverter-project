@@ -115,4 +115,3 @@ Open a Serial Monitor (9600 Baud, CRLF Line Endings).
     # Result: LED animates through day/night cycle
 
 ---
-*Author: Golam Rahman | Master of Engineering Studies, University of Auckland*
